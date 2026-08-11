@@ -1,0 +1,41 @@
+# macOS
+.DS_Store
+
+# Editors
+.idea/
+.vscode/
+*.swp
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# JavaScript / TypeScript
+node_modules/
+.next/
+dist/
+coverage/
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+
+# Notebooks
+.ipynb_checkpoints/
+
+# Logs and local runtime data
+*.log
+tmp/
+uploads/
+
+# Local databases
+*.db
+*.sqlite
+*.sqlite3
+

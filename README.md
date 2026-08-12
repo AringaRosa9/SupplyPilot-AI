@@ -1,10 +1,12 @@
 # SupplyPilot AI
 
+[简体中文](README.md) | [English](README.en.md) | [日本語](README.ja.md)
+
 面向全球旅游电商的供应链招商自动化、产品评级与货盘决策平台。
 
 SupplyPilot AI 覆盖从营销活动发起、招商任务拆解、商品提交、自动校验、产品评级、货品池管理，到供给缺口识别、供应商风险预警和产线复盘的完整链路。项目希望展示如何将 AI Agent、可解释评分模型和事件驱动自动化真正嵌入供应链工作流，而不只是为数据增加一个聊天入口。
 
-> 当前阶段：产品设计与工程框架搭建。仓库暂不包含业务代码。
+> 当前阶段：M0 设计固化与工程骨架已完成，下一阶段为 M1 演示数据与产品壳层。
 
 ## 核心场景
 
@@ -42,25 +44,27 @@ SupplyPilot AI 覆盖从营销活动发起、招商任务拆解、商品提交�
 
 MVP 将包含活动管理、CSV 导入、规则校验、两套评分模型、货品池看板、供给分析、Agent 数据问答、自动预警以及可复现的模拟数据。
 
-## 计划技术架构
+## 技术架构
 
 | 层级 | 候选技术 |
 |---|---|
-| Web | Next.js、TypeScript、Tailwind CSS、ECharts |
-| API | FastAPI 或 NestJS，待架构阶段确认 |
-| 数据库 | PostgreSQL |
-| 异步任务 | Celery 或 BullMQ |
-| 数据分析 | SQL、Polars / Pandas |
+| Web | Next.js、TypeScript、Tailwind CSS；图表阶段引入 ECharts |
+| API | FastAPI、Pydantic、SQLAlchemy 2、Alembic |
+| 数据库 | PostgreSQL 16 |
+| 异步任务 | Redis、Celery |
+| 数据分析 | SQL、Polars（按需） |
 | AI | LLM Tool Calling、受控分析工具、可选 RAG |
 | 交付 | Docker Compose、自动化测试、GitHub Actions |
 
-架构原则：评分结果可解释、模型与规则可版本化、Agent 操作受控、关键变更需要确认、所有自动状态变更可审计。
+架构原则：评分结果可解释、模型与规则可版本化、Agent 操作受控、关键变更需要确认、所有自动状态变更可审计。完整决策见 [系统架构设计](docs/architecture.md)。
 
 ## 仓库结构
 
 ```text
 supplypilot-ai/
 ├── README.md
+├── README.en.md
+├── README.ja.md
 ├── CONTRIBUTING.md
 ├── .gitignore
 ├── docs/
@@ -70,10 +74,10 @@ supplypilot-ai/
 │   ├── agent-design.md
 │   ├── data-dictionary.md
 │   └── demo-script.md
-├── frontend/
-│   └── README.md
-├── backend/
-│   └── README.md
+├── frontend/             # Next.js Web 与基础组件
+├── backend/              # FastAPI、Celery、SQLAlchemy 与迁移
+├── docker-compose.yml
+├── Makefile
 ├── data/
 │   └── README.md
 └── notebooks/
@@ -83,6 +87,8 @@ supplypilot-ai/
 ## 文档导航
 
 - [产品需求文档](docs/PRD.md)
+- [前端页面与布局方案](docs/frontend-design.md)
+- [MVP 开发计划](docs/development-plan.md)
 - [系统架构设计](docs/architecture.md)
 - [产品评分模型](docs/scoring-model.md)
 - [Agent 设计](docs/agent-design.md)
@@ -90,14 +96,29 @@ supplypilot-ai/
 - [演示脚本](docs/demo-script.md)
 - [贡献指南](CONTRIBUTING.md)
 
-除 PRD 外，其余设计文档目前为待完善的框架，后续会伴随技术选型和 MVP 开发逐步补齐。
+M0 已固化系统架构、数据状态、评分模型和 Agent 边界；后续里程碑在这些契约上迭代。
+
+## 本地启动
+
+复制环境变量并启动全部组件：
+
+```bash
+cp .env.example .env
+docker compose up --build
+```
+
+- Web：<http://localhost:3000>
+- API 健康检查：<http://localhost:8000/api/v1/health>
+- OpenAPI：<http://localhost:8000/api/docs>
+
+执行本地质量门禁：`make check`。首次运行需要先按 `backend/README.md` 和 `frontend/README.md` 安装开发依赖。
 
 ## 里程碑
 
 - [x] 确定项目定位与名称
 - [x] 完成初版 PRD
 - [x] 建立文档和工程目录骨架
-- [ ] 完成信息架构、数据模型和系统架构设计
+- [x] 完成信息架构、数据模型和系统架构设计
 - [ ] 准备可复现的模拟数据集
 - [ ] 实现活动、招商任务与货品池基础链路
 - [ ] 实现 Hotel / Flight 评级引擎
@@ -106,5 +127,4 @@ supplypilot-ai/
 
 ## 项目状态
 
-SupplyPilot AI 目前处于设计阶段，接口、数据结构和技术选型都可能继续调整。现阶段以 [PRD](docs/PRD.md) 作为产品范围基线。
-
+SupplyPilot AI 已完成 M0。产品范围以 [PRD](docs/PRD.md) 为基线，技术与业务契约的变更应通过 ADR、迁移和对应测试同步记录。

@@ -1,0 +1,698 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SupplyPilot AI — 供应链驾驶舱</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: oklch(24% 0.035 251);
+      --ink-soft: oklch(42% 0.025 251);
+      --ink-faint: oklch(57% 0.018 251);
+      --paper: oklch(98% 0.006 238);
+      --surface: oklch(99.4% 0.004 238);
+      --surface-blue: oklch(96.2% 0.018 240);
+      --line: oklch(89% 0.012 242);
+      --line-strong: oklch(80% 0.022 242);
+      --navy: oklch(34% 0.095 252);
+      --navy-deep: oklch(27% 0.075 252);
+      --navy-soft: oklch(91% 0.038 244);
+      --amber: oklch(73% 0.145 74);
+      --amber-soft: oklch(94% 0.047 78);
+      --red: oklch(55% 0.17 27);
+      --red-soft: oklch(94% 0.035 27);
+      --green: oklch(54% 0.115 158);
+      --green-soft: oklch(94% 0.034 157);
+      --shadow-float: 0 20px 70px oklch(23% 0.04 252 / 0.16);
+      --ease-out: cubic-bezier(.16, 1, .3, 1);
+    }
+
+    * { box-sizing: border-box; }
+
+    html { background: var(--paper); }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        linear-gradient(90deg, oklch(70% 0.03 245 / .045) 1px, transparent 1px),
+        linear-gradient(oklch(70% 0.03 245 / .045) 1px, transparent 1px),
+        var(--paper);
+      background-size: 48px 48px;
+      font-family: "Avenir Next", "PingFang SC", "Hiragino Sans GB", sans-serif;
+      font-size: 15px;
+      line-height: 1.55;
+      font-kerning: normal;
+    }
+
+    button, input, select { font: inherit; }
+    button { color: inherit; }
+
+    button:focus-visible, select:focus-visible, input:focus-visible {
+      outline: 2px solid var(--navy);
+      outline-offset: 3px;
+    }
+
+    .app {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 224px minmax(0, 1fr);
+    }
+
+    .sidebar {
+      position: fixed;
+      inset: 0 auto 0 0;
+      width: 224px;
+      z-index: 30;
+      display: flex;
+      flex-direction: column;
+      padding: 26px 18px 20px;
+      color: oklch(94% 0.014 245);
+      background: var(--navy-deep);
+      overflow: hidden;
+    }
+
+    .sidebar::before {
+      content: "";
+      position: absolute;
+      width: 280px;
+      height: 280px;
+      border: 1px solid oklch(72% 0.08 238 / .18);
+      border-radius: 50%;
+      top: -180px;
+      left: 72px;
+      box-shadow: 0 0 0 38px oklch(72% 0.08 238 / .045), 0 0 0 76px oklch(72% 0.08 238 / .03);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      position: relative;
+      z-index: 1;
+      margin-bottom: 42px;
+      padding: 0 7px;
+    }
+
+    .brand-mark {
+      width: 32px;
+      height: 32px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      color: var(--navy-deep);
+      background: oklch(90% 0.08 193);
+      transform: rotate(-8deg);
+    }
+
+    .brand-name { font-size: 17px; font-weight: 650; letter-spacing: -.025em; }
+    .brand-name small { display: block; margin-top: -3px; color: oklch(74% 0.025 240); font-size: 9px; letter-spacing: .2em; text-transform: uppercase; }
+
+    .nav-label {
+      padding: 0 12px;
+      margin-bottom: 9px;
+      color: oklch(69% 0.025 244);
+      font-size: 10px;
+      font-weight: 650;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+    }
+
+    .nav { display: grid; gap: 5px; }
+
+    .nav-item {
+      width: 100%;
+      min-height: 44px;
+      border: 0;
+      border-radius: 8px;
+      padding: 0 12px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
+      color: oklch(78% 0.02 243);
+      background: transparent;
+      transition: color .2s ease, background .2s ease, transform .2s var(--ease-out);
+      text-align: left;
+    }
+
+    .nav-item svg { width: 18px; height: 18px; stroke-width: 1.8; }
+    .nav-item:hover { color: oklch(97% 0.008 240); background: oklch(96% 0.02 240 / .07); transform: translateX(2px); }
+    .nav-item.active { color: oklch(98% 0.008 240); background: oklch(96% 0.02 240 / .11); }
+    .nav-item.active::after { content: ""; width: 5px; height: 5px; margin-left: auto; border-radius: 50%; background: oklch(86% 0.11 188); box-shadow: 0 0 0 4px oklch(86% 0.11 188 / .12); }
+
+    .sidebar-foot { margin-top: auto; position: relative; z-index: 1; }
+
+    .data-status {
+      margin: 0 4px 16px;
+      padding: 12px;
+      border-top: 1px solid oklch(90% 0.02 240 / .12);
+      border-bottom: 1px solid oklch(90% 0.02 240 / .12);
+      color: oklch(72% 0.02 241);
+      font-size: 11px;
+    }
+
+    .data-status span { display: flex; align-items: center; gap: 7px; color: oklch(88% 0.025 235); font-size: 12px; margin-bottom: 2px; }
+    .data-status i { width: 6px; height: 6px; border-radius: 50%; background: oklch(72% 0.13 158); box-shadow: 0 0 0 4px oklch(72% 0.13 158 / .12); }
+
+    .main-shell { grid-column: 2; min-width: 0; }
+
+    .topbar {
+      height: 64px;
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      padding: 0 30px;
+      background: oklch(98% 0.006 238 / .93);
+      border-bottom: 1px solid var(--line);
+      backdrop-filter: blur(14px);
+    }
+
+    .search {
+      height: 38px;
+      min-width: 210px;
+      flex: 1;
+      max-width: 360px;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      padding: 0 12px;
+      color: var(--ink-faint);
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+    }
+
+    .search svg { width: 16px; }
+    .search input { width: 100%; border: 0; outline: 0; background: transparent; color: var(--ink); }
+    .search input::placeholder { color: var(--ink-faint); opacity: 1; }
+    .search kbd { border: 1px solid var(--line); border-bottom-color: var(--line-strong); border-radius: 4px; padding: 0 5px; font-size: 10px; background: var(--paper); }
+
+    .context-select {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 38px;
+      border: 0;
+      background: transparent;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .context-select .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); box-shadow: 0 0 0 4px var(--green-soft); }
+
+    .top-actions { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+
+    .icon-btn, .agent-btn, .avatar-btn {
+      min-height: 40px;
+      border: 1px solid var(--line);
+      background: var(--surface);
+      cursor: pointer;
+    }
+
+    .icon-btn { width: 40px; border-radius: 50%; display: grid; place-items: center; position: relative; }
+    .icon-btn svg { width: 18px; }
+    .icon-btn .notice { position: absolute; width: 7px; height: 7px; border-radius: 50%; top: 8px; right: 7px; background: var(--red); border: 2px solid var(--surface); }
+
+    .agent-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border-color: var(--navy);
+      color: oklch(97% 0.006 238);
+      background: var(--navy);
+      border-radius: 8px;
+      padding: 0 14px;
+      font-weight: 650;
+    }
+
+    .agent-btn svg { width: 17px; }
+    .avatar-btn { width: 40px; border-radius: 50%; background: var(--amber-soft); color: oklch(35% 0.07 71); font-weight: 700; }
+
+    main { padding: 36px clamp(24px, 3.2vw, 52px) 64px; }
+
+    .page-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 24px;
+      margin-bottom: 34px;
+      animation: rise .55s var(--ease-out) both;
+    }
+
+    .eyebrow { display: flex; align-items: center; gap: 9px; color: var(--navy); font-size: 11px; font-weight: 750; letter-spacing: .14em; text-transform: uppercase; }
+    .eyebrow::before { content: ""; width: 22px; height: 1px; background: var(--navy); }
+    h1 { margin: 5px 0 5px; font-size: clamp(27px, 2.4vw, 36px); line-height: 1.15; font-weight: 620; letter-spacing: -.045em; }
+    .page-sub { margin: 0; color: var(--ink-soft); }
+    .page-sub strong { color: var(--red); font-weight: 650; }
+
+    .filter-row { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+    .filter-chip { min-height: 36px; border: 1px solid var(--line); border-radius: 18px; padding: 0 13px; background: var(--surface); cursor: pointer; color: var(--ink-soft); font-size: 12px; }
+    .filter-chip.active { color: var(--navy-deep); border-color: var(--line-strong); background: var(--navy-soft); font-weight: 650; }
+
+    .decision-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.55fr) minmax(320px, .85fr);
+      border-top: 1px solid var(--line-strong);
+      border-bottom: 1px solid var(--line);
+      background: var(--surface);
+      animation: rise .6s .07s var(--ease-out) both;
+    }
+
+    .section { padding: 25px 28px 28px 0; }
+    .section + .section { border-left: 1px solid var(--line); padding-left: 28px; padding-right: 0; }
+    .section-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 17px; }
+    .section-title { margin: 0; font-size: 16px; font-weight: 680; letter-spacing: -.015em; }
+    .section-meta { color: var(--ink-faint); font-size: 11px; }
+    .text-link { border: 0; background: transparent; color: var(--navy); padding: 5px; cursor: pointer; font-size: 12px; font-weight: 650; }
+
+    .queue { display: grid; }
+
+    .queue-item {
+      min-height: 70px;
+      display: grid;
+      grid-template-columns: 44px minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 14px;
+      border: 0;
+      border-top: 1px solid var(--line);
+      padding: 10px 4px;
+      background: transparent;
+      cursor: pointer;
+      text-align: left;
+      transition: background .2s ease, padding .25s var(--ease-out);
+    }
+
+    .queue-item:hover { padding-left: 10px; padding-right: 10px; background: var(--paper); }
+    .queue-item:last-child { border-bottom: 1px solid var(--line); }
+    .priority { width: 36px; height: 24px; border-radius: 5px; display: grid; place-items: center; font-size: 10px; font-weight: 750; letter-spacing: .06em; }
+    .priority.p0 { color: var(--red); background: var(--red-soft); }
+    .priority.p1 { color: oklch(47% 0.12 66); background: var(--amber-soft); }
+    .queue-copy strong { display: block; margin-bottom: 2px; font-size: 13px; font-weight: 650; }
+    .queue-copy span { color: var(--ink-faint); font-size: 11px; }
+    .queue-impact { text-align: right; color: var(--ink-soft); font-size: 11px; font-variant-numeric: tabular-nums; }
+    .queue-impact b { display: block; color: var(--ink); font-size: 13px; font-weight: 650; }
+
+    .health-layout { display: grid; grid-template-columns: 112px 1fr; align-items: center; gap: 19px; margin-top: 8px; }
+    .health-ring { width: 108px; height: 108px; display: grid; place-items: center; border-radius: 50%; background: conic-gradient(var(--amber) 0 74%, var(--line) 74% 100%); position: relative; }
+    .health-ring::after { content: ""; position: absolute; inset: 9px; border-radius: 50%; background: var(--surface); }
+    .health-number { position: relative; z-index: 1; text-align: center; font-variant-numeric: tabular-nums; }
+    .health-number strong { display: block; font-size: 28px; line-height: 1; letter-spacing: -.05em; }
+    .health-number span { color: var(--red); font-size: 10px; }
+
+    .health-notes { display: grid; gap: 10px; }
+    .dimension { display: grid; grid-template-columns: 65px 1fr 28px; gap: 8px; align-items: center; font-size: 10px; color: var(--ink-soft); }
+    .dimension b { text-align: right; font-weight: 650; font-variant-numeric: tabular-nums; color: var(--ink); }
+    .bar { height: 5px; border-radius: 3px; background: var(--line); overflow: hidden; }
+    .bar i { display: block; height: 100%; border-radius: inherit; background: var(--navy); }
+    .bar.warn i { background: var(--amber); }
+    .bar.bad i { background: var(--red); }
+    .health-caption { margin: 17px 0 0; padding-top: 14px; border-top: 1px solid var(--line); color: var(--ink-soft); font-size: 11px; }
+    .health-caption strong { color: var(--red); }
+
+    .readiness { padding: 34px 0 35px; animation: rise .65s .13s var(--ease-out) both; }
+    .readiness-head { display: flex; justify-content: space-between; align-items: end; margin-bottom: 19px; }
+    .readiness-title h2 { margin: 0; font-size: 17px; font-weight: 680; }
+    .readiness-title p { margin: 3px 0 0; color: var(--ink-faint); font-size: 11px; }
+    .readiness-score { color: var(--ink-soft); font-size: 12px; }
+    .readiness-score strong { color: var(--ink); font-size: 20px; font-weight: 650; font-variant-numeric: tabular-nums; }
+
+    .stage-line { display: grid; grid-template-columns: repeat(5, 1fr); position: relative; }
+    .stage-line::before { content: ""; position: absolute; left: 5%; right: 5%; top: 12px; height: 2px; background: linear-gradient(90deg, var(--green) 0 61%, var(--line-strong) 61% 100%); }
+    .stage { position: relative; z-index: 1; text-align: center; }
+    .stage-dot { width: 25px; height: 25px; display: grid; place-items: center; margin: 0 auto 9px; border-radius: 50%; border: 2px solid var(--line-strong); background: var(--surface); font-size: 9px; font-weight: 750; }
+    .stage.done .stage-dot { border-color: var(--green); color: oklch(98% 0 0); background: var(--green); }
+    .stage.current .stage-dot { border-color: var(--amber); color: oklch(38% 0.1 68); background: var(--amber-soft); box-shadow: 0 0 0 5px oklch(73% 0.145 74 / .13); }
+    .stage strong { display: block; font-size: 12px; font-weight: 650; }
+    .stage span { color: var(--ink-faint); font-size: 10px; font-variant-numeric: tabular-nums; }
+
+    .insight-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.4fr) minmax(300px, .7fr);
+      gap: 42px;
+      align-items: start;
+      animation: rise .7s .2s var(--ease-out) both;
+    }
+
+    .matrix-wrap { border-top: 1px solid var(--line-strong); }
+    .matrix-head { display: flex; justify-content: space-between; align-items: center; padding: 20px 0 14px; }
+    .matrix-head h2, .agent-preview h2 { margin: 0; font-size: 16px; font-weight: 680; }
+    .matrix-head p { margin: 2px 0 0; color: var(--ink-faint); font-size: 11px; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 12px; font-variant-numeric: tabular-nums; }
+    th { color: var(--ink-faint); font-size: 10px; font-weight: 650; text-align: left; letter-spacing: .04em; }
+    th, td { border-bottom: 1px solid var(--line); padding: 11px 10px; }
+    th:first-child, td:first-child { padding-left: 0; }
+    td:first-child { font-weight: 650; }
+    .coverage { min-width: 70px; display: flex; align-items: center; gap: 7px; }
+    .coverage span { width: 7px; height: 7px; border-radius: 50%; }
+    .coverage.good span { background: var(--green); }
+    .coverage.warn span { background: var(--amber); }
+    .coverage.bad span { background: var(--red); }
+    .coverage em { font-style: normal; font-weight: 650; }
+    .coverage small { color: var(--ink-faint); }
+
+    .agent-preview {
+      position: relative;
+      padding: 22px 24px 23px;
+      color: oklch(93% 0.013 239);
+      background: var(--navy-deep);
+      border-radius: 2px 14px 14px 14px;
+      overflow: hidden;
+    }
+
+    .agent-preview::after { content: ""; position: absolute; width: 140px; height: 140px; right: -75px; bottom: -85px; border: 1px solid oklch(80% 0.08 191 / .18); border-radius: 50%; box-shadow: 0 0 0 22px oklch(80% 0.08 191 / .04), 0 0 0 44px oklch(80% 0.08 191 / .025); }
+    .agent-kicker { display: flex; gap: 7px; align-items: center; margin-bottom: 12px; color: oklch(77% 0.08 187); font-size: 10px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+    .agent-kicker svg { width: 15px; }
+    .agent-preview h2 { color: oklch(98% 0 0); font-size: 18px; line-height: 1.35; }
+    .agent-preview > p { color: oklch(76% 0.018 241); font-size: 12px; }
+    .agent-evidence { display: grid; gap: 8px; margin: 17px 0; padding: 14px 0; border-top: 1px solid oklch(90% 0.02 240 / .13); border-bottom: 1px solid oklch(90% 0.02 240 / .13); }
+    .agent-evidence span { display: flex; justify-content: space-between; color: oklch(73% 0.018 241); font-size: 11px; }
+    .agent-evidence b { color: oklch(94% 0.016 240); font-weight: 650; }
+    .agent-action { width: 100%; min-height: 40px; position: relative; z-index: 1; border: 1px solid oklch(82% 0.075 190); border-radius: 7px; color: var(--navy-deep); background: oklch(88% 0.075 191); cursor: pointer; font-weight: 700; }
+
+    .agent-rail {
+      position: fixed;
+      inset: 0 0 0 auto;
+      z-index: 60;
+      width: min(440px, 100vw);
+      display: grid;
+      grid-template-rows: auto auto 1fr auto;
+      color: var(--ink);
+      background: var(--surface);
+      box-shadow: var(--shadow-float);
+      transform: translateX(105%);
+      transition: transform .42s var(--ease-out);
+    }
+
+    .agent-rail.open { transform: translateX(0); }
+    .rail-head { display: flex; align-items: center; gap: 11px; padding: 18px 20px; border-bottom: 1px solid var(--line); }
+    .rail-symbol { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 50%; color: var(--navy-deep); background: oklch(88% 0.075 191); }
+    .rail-head strong { display: block; font-size: 14px; }
+    .rail-head span { color: var(--ink-faint); font-size: 10px; }
+    .close-btn { width: 38px; height: 38px; margin-left: auto; border: 0; border-radius: 50%; background: var(--paper); cursor: pointer; font-size: 21px; }
+
+    .rail-context { padding: 12px 20px; display: flex; gap: 7px; align-items: center; border-bottom: 1px solid var(--line); color: var(--ink-soft); font-size: 11px; background: var(--surface-blue); }
+    .context-tag { border: 1px solid var(--line-strong); border-radius: 12px; padding: 2px 8px; color: var(--navy); background: var(--surface); font-weight: 650; }
+
+    .rail-chat { overflow: auto; padding: 25px 20px 40px; }
+    .assistant-message { max-width: 360px; }
+    .assistant-message .who { display: flex; align-items: center; gap: 7px; color: var(--ink-faint); font-size: 10px; margin-bottom: 8px; }
+    .assistant-message h3 { margin: 0 0 8px; font-size: 19px; line-height: 1.4; letter-spacing: -.025em; }
+    .assistant-message p { color: var(--ink-soft); font-size: 13px; }
+    .evidence-block { margin-top: 18px; padding: 14px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+    .evidence-block strong { font-size: 11px; }
+    .evidence-block ul { margin: 9px 0 0; padding-left: 17px; color: var(--ink-soft); font-size: 12px; }
+    .confidence { display: flex; justify-content: space-between; margin-top: 13px; color: var(--ink-faint); font-size: 10px; }
+    .confidence b { color: var(--green); }
+
+    .task-preview { margin-top: 20px; padding: 16px; border: 1px solid var(--line); border-radius: 8px; background: var(--paper); }
+    .task-preview .label { color: var(--navy); font-size: 10px; font-weight: 750; letter-spacing: .1em; text-transform: uppercase; }
+    .task-preview h4 { margin: 5px 0 8px; font-size: 14px; }
+    .task-preview dl { display: grid; grid-template-columns: 68px 1fr; gap: 5px; margin: 0; font-size: 11px; }
+    .task-preview dt { color: var(--ink-faint); }
+    .task-preview dd { margin: 0; }
+    .preview-actions { display: flex; gap: 8px; margin-top: 14px; }
+    .preview-actions button { min-height: 36px; border-radius: 6px; padding: 0 12px; cursor: pointer; font-size: 11px; font-weight: 650; }
+    .preview-actions .primary { border: 1px solid var(--navy); color: oklch(98% 0 0); background: var(--navy); }
+    .preview-actions .secondary { border: 1px solid var(--line); background: var(--surface); }
+
+    .rail-input { padding: 14px 20px 20px; border-top: 1px solid var(--line); background: var(--surface); }
+    .input-wrap { min-height: 48px; display: flex; align-items: center; gap: 8px; padding: 6px 7px 6px 14px; border: 1px solid var(--line-strong); border-radius: 10px; background: var(--paper); }
+    .input-wrap input { min-width: 0; flex: 1; border: 0; outline: 0; background: transparent; }
+    .send-btn { width: 36px; height: 36px; border: 0; border-radius: 7px; color: oklch(98% 0 0); background: var(--navy); cursor: pointer; }
+
+    .toast { position: fixed; left: 50%; bottom: 26px; z-index: 90; padding: 11px 16px; border-radius: 8px; color: oklch(98% 0 0); background: var(--navy-deep); box-shadow: var(--shadow-float); opacity: 0; transform: translate(-50%, 18px); pointer-events: none; transition: .3s var(--ease-out); }
+    .toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+    @keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+
+    @media (max-width: 1100px) {
+      .app { grid-template-columns: 72px minmax(0, 1fr); }
+      .sidebar { width: 72px; padding: 25px 12px; }
+      .brand { padding: 0 8px; }
+      .brand-name, .nav-label, .nav-item span, .sidebar-foot { display: none; }
+      .nav-item { justify-content: center; padding: 0; }
+      .nav-item.active::after { position: absolute; right: 5px; }
+      .main-shell { grid-column: 2; }
+      .decision-grid, .insight-grid { grid-template-columns: 1fr; }
+      .section + .section { border-left: 0; border-top: 1px solid var(--line); padding-left: 0; }
+      .insight-grid { gap: 32px; }
+    }
+
+    @media (max-width: 760px) {
+      .app { display: block; }
+      .sidebar { position: static; width: 100%; height: 64px; padding: 0 18px; flex-direction: row; align-items: center; }
+      .brand { margin: 0 auto 0 0; }
+      .brand-name { display: block; }
+      .brand-name small, .nav-label { display: none; }
+      .nav { display: flex; }
+      .nav-item { width: 40px; }
+      .nav-item:nth-child(n+4) { display: none; }
+      .topbar { top: 0; padding: 0 16px; }
+      .search, .context-select { display: none; }
+      .top-actions { width: 100%; justify-content: flex-end; }
+      main { padding: 26px 18px 48px; }
+      .page-head { align-items: flex-start; flex-direction: column; }
+      .filter-row { justify-content: flex-start; }
+      .section { padding-right: 0; }
+      .health-layout { grid-template-columns: 100px 1fr; }
+      .stage-line { overflow-x: auto; grid-template-columns: repeat(5, 120px); padding-bottom: 8px; }
+      .queue-item { grid-template-columns: 40px 1fr; }
+      .queue-impact { display: none; }
+      table { min-width: 640px; }
+      .matrix-scroll { overflow-x: auto; }
+      .agent-btn span { display: none; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar" aria-label="主导航">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="8"/><path d="m15.5 8.5-2.1 4.9-4.9 2.1 2.1-4.9 4.9-2.1Z"/></svg>
+        </div>
+        <div class="brand-name">SupplyPilot <small>Intelligence</small></div>
+      </div>
+
+      <div class="nav-label">Workspace</div>
+      <nav class="nav">
+        <button class="nav-item active" data-page="驾驶舱"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 13h6V4H4v9Zm0 7h6v-4H4v4Zm10 0h6v-9h-6v9Zm0-16v4h6V4h-6Z"/></svg><span>驾驶舱</span></button>
+        <button class="nav-item" data-page="招商活动"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 7h16M7 3v4m10-4v4M5 5h14a1 1 0 0 1 1 1v14H4V6a1 1 0 0 1 1-1Z"/><path d="m8 13 2 2 5-5"/></svg><span>招商活动</span></button>
+        <button class="nav-item" data-page="货品池"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="m4 7 8-4 8 4-8 4-8-4Z"/><path d="m4 12 8 4 8-4M4 17l8 4 8-4"/></svg><span>货品池</span></button>
+        <button class="nav-item" data-page="供给洞察"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 19V9m5 10V5m6 14v-7m5 7V3"/></svg><span>供给洞察</span></button>
+        <button class="nav-item" data-page="自动化"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 3v4m0 10v4M3 12h4m10 0h4M5.6 5.6l2.8 2.8m7.2 7.2 2.8 2.8m0-12.8-2.8 2.8m-7.2 7.2-2.8 2.8"/><circle cx="12" cy="12" r="4"/></svg><span>自动化</span></button>
+      </nav>
+
+      <div class="sidebar-foot">
+        <div class="data-status"><span><i></i>数据已同步</span>更新于 10:24 · Demo Dataset</div>
+        <button class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="9"/><path d="M9.8 9a2.3 2.3 0 1 1 3.3 2.1c-.8.4-1.1.9-1.1 1.9m0 3h.01"/></svg><span>指标口径与帮助</span></button>
+      </div>
+    </aside>
+
+    <div class="main-shell">
+      <header class="topbar">
+        <label class="search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
+          <input aria-label="全局搜索" placeholder="搜索活动、商品或供应商" />
+          <kbd>⌘ K</kbd>
+        </label>
+        <button class="context-select"><span class="dot"></span>东南亚暑期旅行节 <span>⌄</span></button>
+        <div class="top-actions">
+          <button class="agent-btn" id="openAgent"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3 9.8 8.8 4 11l5.8 2.2L12 19l2.2-5.8L20 11l-5.8-2.2L12 3Z"/></svg><span>询问 Agent</span></button>
+          <button class="icon-btn" aria-label="通知"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9ZM10 21h4"/></svg><i class="notice"></i></button>
+          <button class="avatar-btn" aria-label="切换角色">周</button>
+        </div>
+      </header>
+
+      <main>
+        <div class="page-head">
+          <div>
+            <div class="eyebrow">Global Supply Brief</div>
+            <h1>供应链驾驶舱</h1>
+            <p class="page-sub">今天有 <strong>6 项需要决策</strong>，其中 2 项会影响当前活动按时上线。</p>
+          </div>
+          <div class="filter-row" aria-label="范围筛选">
+            <button class="filter-chip active">进行中活动</button>
+            <button class="filter-chip">Hotel + Flight</button>
+            <button class="filter-chip">全部市场</button>
+            <button class="filter-chip">未来 30 天</button>
+          </div>
+        </div>
+
+        <section class="decision-grid">
+          <div class="section">
+            <div class="section-head"><h2 class="section-title">决策队列</h2><span class="section-meta">按业务影响排序 · 10:24 更新</span></div>
+            <div class="queue">
+              <button class="queue-item agent-trigger" data-risk="曼谷高星酒店 62% 的活动库存集中于同一供应商，超过 HHI 风险阈值。">
+                <span class="priority p0">P0</span>
+                <span class="queue-copy"><strong>曼谷酒店供应商集中度过高</strong><span>东南亚暑期旅行节 · Hotel · 曼谷</span></span>
+                <span class="queue-impact"><b>HHI 0.42</b>阈值 0.25</span>
+              </button>
+              <button class="queue-item agent-trigger" data-risk="上海—普吉航线当前可售库存较目标少 38%，距离招商截止还剩 4 天。">
+                <span class="priority p1">P1</span>
+                <span class="queue-copy"><strong>上海—普吉航线库存缺口 38%</strong><span>距离招商截止仅剩 4 天 · Flight</span></span>
+                <span class="queue-impact"><b>缺口 1,260</b>目标 3,300</span>
+              </button>
+              <button class="queue-item agent-trigger" data-risk="12 个已通过评级的商品等待人工审核，其中 5 个商品评级为 A。">
+                <span class="priority p1">P1</span>
+                <span class="queue-copy"><strong>12 个高潜力商品等待审核</strong><span>5 个 A 级商品 · 最长等待 18 小时</span></span>
+                <span class="queue-impact"><b>预计 +7%</b>高评级占比</span>
+              </button>
+            </div>
+            <button class="text-link">查看全部 6 项 →</button>
+          </div>
+
+          <div class="section">
+            <div class="section-head"><h2 class="section-title">货盘健康度</h2><button class="text-link">查看口径</button></div>
+            <div class="health-layout">
+              <div class="health-ring"><div class="health-number"><strong>74</strong><span>较上周 −6</span></div></div>
+              <div class="health-notes">
+                <div class="dimension"><span>目标完成</span><div class="bar"><i style="width:84%"></i></div><b>84</b></div>
+                <div class="dimension"><span>高评级占比</span><div class="bar"><i style="width:79%"></i></div><b>79</b></div>
+                <div class="dimension"><span>库存稳定</span><div class="bar warn"><i style="width:66%"></i></div><b>66</b></div>
+                <div class="dimension"><span>供应商多样</span><div class="bar bad"><i style="width:52%"></i></div><b>52</b></div>
+              </div>
+            </div>
+            <p class="health-caption"><strong>主要扣分：</strong>曼谷供应商集中度上升，Flight 可售库存连续 3 日下降。</p>
+          </div>
+        </section>
+
+        <section class="readiness">
+          <div class="readiness-head">
+            <div class="readiness-title"><h2>东南亚暑期旅行节 · 准备度</h2><p>2026.07.01–08.31 · 中国 / 新加坡 / 澳大利亚</p></div>
+            <div class="readiness-score"><strong>76%</strong> 已准备</div>
+          </div>
+          <div class="stage-line">
+            <div class="stage done"><div class="stage-dot">✓</div><strong>目标确认</strong><span>18 / 18 项</span></div>
+            <div class="stage done"><div class="stage-dot">✓</div><strong>招商任务</strong><span>14 / 16 完成</span></div>
+            <div class="stage done"><div class="stage-dot">✓</div><strong>商品校验</strong><span>326 / 352 通过</span></div>
+            <div class="stage current"><div class="stage-dot">4</div><strong>评级审核</strong><span>12 项待处理</span></div>
+            <div class="stage"><div class="stage-dot">5</div><strong>活动上架</strong><span>目标 280 项</span></div>
+          </div>
+        </section>
+
+        <section class="insight-grid">
+          <div class="matrix-wrap">
+            <div class="matrix-head">
+              <div><h2>市场 × 产线供给覆盖</h2><p>目标商品数与可售库存加权 · 点击查看缺口明细</p></div>
+              <button class="text-link">进入供给洞察 →</button>
+            </div>
+            <div class="matrix-scroll">
+              <table>
+                <thead><tr><th>市场</th><th>Hotel 覆盖</th><th>Flight 覆盖</th><th>高评级占比</th><th>最大风险</th></tr></thead>
+                <tbody>
+                  <tr><td>曼谷 Bangkok</td><td><div class="coverage warn"><span></span><em>72%</em><small>−18</small></div></td><td><div class="coverage good"><span></span><em>93%</em></div></td><td>68%</td><td>供应商集中</td></tr>
+                  <tr><td>普吉 Phuket</td><td><div class="coverage good"><span></span><em>88%</em></div></td><td><div class="coverage bad"><span></span><em>62%</em><small>−1,260</small></div></td><td>74%</td><td>航线库存不足</td></tr>
+                  <tr><td>新加坡 Singapore</td><td><div class="coverage warn"><span></span><em>76%</em><small>−12</small></div></td><td><div class="coverage good"><span></span><em>96%</em></div></td><td>81%</td><td>亲子酒店不足</td></tr>
+                  <tr><td>清迈 Chiang Mai</td><td><div class="coverage good"><span></span><em>91%</em></div></td><td><div class="coverage good"><span></span><em>89%</em></div></td><td>77%</td><td>价格竞争力</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <aside class="agent-preview">
+            <div class="agent-kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3 9.8 8.8 4 11l5.8 2.2L12 19l2.2-5.8L20 11l-5.8-2.2L12 3Z"/></svg> Agent Brief · 可信度 0.91</div>
+            <h2>优先补充曼谷独立酒店，并将上海—普吉航线升级为紧急招商。</h2>
+            <p>当前最大风险不是商品总量，而是供给结构。只补充现有头部供应商会进一步提高集中度。</p>
+            <div class="agent-evidence"><span>曼谷供应商 Top 1 占比 <b>62%</b></span><span>上海—普吉库存缺口 <b>1,260</b></span><span>距离招商截止 <b>4 天</b></span></div>
+            <button class="agent-action" id="previewTask">查看行动预览</button>
+          </aside>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <aside class="agent-rail" id="agentRail" aria-label="Intelligence Agent" aria-hidden="true">
+    <div class="rail-head">
+      <div class="rail-symbol"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3 9.8 8.8 4 11l5.8 2.2L12 19l2.2-5.8L20 11l-5.8-2.2L12 3Z"/></svg></div>
+      <div><strong>Product Line Intelligence</strong><span>只读分析 · 写操作需确认</span></div>
+      <button class="close-btn" id="closeAgent" aria-label="关闭 Agent">×</button>
+    </div>
+    <div class="rail-context">分析范围 <span class="context-tag">东南亚暑期旅行节</span><span class="context-tag">全部产线</span></div>
+    <div class="rail-chat">
+      <div class="assistant-message">
+        <div class="who">SUPPLYPILOT AGENT · 刚刚</div>
+        <h3 id="agentTitle">曼谷供给量接近目标，但结构性风险已经超过安全阈值。</h3>
+        <p id="agentBody">建议优先招商 6–8 家独立酒店供应商，而不是继续向当前头部供应商补量；同时将新供应商单家占比控制在 12% 以下。</p>
+        <div class="evidence-block">
+          <strong>数据依据</strong>
+          <ul><li>曼谷 Hotel 当前覆盖率 72%，商品缺口 18 个</li><li>Top 1 供应商活动库存占比 62%</li><li>HHI 为 0.42，高于预警阈值 0.25</li></ul>
+          <div class="confidence"><span>统计时间 2026-08-11 10:24</span><b>置信度 0.91</b></div>
+        </div>
+        <div class="task-preview">
+          <div class="label">Action Preview</div>
+          <h4>创建：曼谷高星酒店补充招商任务</h4>
+          <dl><dt>优先级</dt><dd>P0 · 距截止 4 天</dd><dt>目标</dt><dd>新增 18 个商品 / 6 家供应商</dd><dt>负责人</dt><dd>Hotel SEA 招商组</dd><dt>限制</dt><dd>单一供应商目标占比 ≤ 12%</dd></dl>
+          <div class="preview-actions"><button class="primary" id="confirmTask">确认创建任务</button><button class="secondary">调整条件</button></div>
+        </div>
+      </div>
+    </div>
+    <div class="rail-input"><div class="input-wrap"><input aria-label="向 Agent 提问" placeholder="追问数据依据或行动建议…" /><button class="send-btn" aria-label="发送">↑</button></div></div>
+  </aside>
+
+  <div class="toast" id="toast">招商任务已创建，并已通知 Hotel SEA 招商组</div>
+
+  <script>
+    const rail = document.getElementById('agentRail');
+    const openAgent = (message) => {
+      if (message) {
+        document.getElementById('agentTitle').textContent = message;
+        document.getElementById('agentBody').textContent = '我已带入当前活动、产线和时间范围。以下判断基于最新的供给目标、库存快照与供应商表现数据。';
+      }
+      rail.classList.add('open');
+      rail.setAttribute('aria-hidden', 'false');
+      document.getElementById('closeAgent').focus();
+    };
+
+    const closeAgent = () => {
+      rail.classList.remove('open');
+      rail.setAttribute('aria-hidden', 'true');
+      document.getElementById('openAgent').focus();
+    };
+
+    document.getElementById('openAgent').addEventListener('click', () => openAgent());
+    document.getElementById('previewTask').addEventListener('click', () => openAgent());
+    document.getElementById('closeAgent').addEventListener('click', closeAgent);
+    document.addEventListener('keydown', (event) => { if (event.key === 'Escape' && rail.classList.contains('open')) closeAgent(); });
+
+    document.querySelectorAll('.agent-trigger').forEach((item) => {
+      item.addEventListener('click', () => openAgent(item.dataset.risk));
+    });
+
+    document.querySelectorAll('.nav-item[data-page]').forEach((item) => {
+      item.addEventListener('click', () => {
+        document.querySelectorAll('.nav-item[data-page]').forEach((node) => node.classList.remove('active'));
+        item.classList.add('active');
+        if (item.dataset.page !== '驾驶舱') {
+          const toast = document.getElementById('toast');
+          toast.textContent = `${item.dataset.page}页面将在下一版原型中展开`;
+          toast.classList.add('show');
+          setTimeout(() => toast.classList.remove('show'), 2300);
+        }
+      });
+    });
+
+    document.querySelectorAll('.filter-chip').forEach((chip) => {
+      chip.addEventListener('click', () => chip.classList.toggle('active'));
+    });
+
+    document.getElementById('confirmTask').addEventListener('click', () => {
+      const toast = document.getElementById('toast');
+      toast.textContent = '招商任务已创建，并已通知 Hotel SEA 招商组';
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 2800);
+    });
+  </script>
+</body>
+</html>

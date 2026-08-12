@@ -1,15 +1,12 @@
 # Frontend
 
-SupplyPilot AI Web 应用预留目录，当前不包含代码。
+Next.js App Router 应用。M0 将确认版 HTML 原型拆成导航、顶部上下文栏、页面容器和基于 Radix Dialog 的 Intelligence Rail，并建立语义 token 与基础组件。
 
-计划承载：
+```bash
+npm install
+npm run dev
+```
 
-- 全局供应链驾驶舱
-- 活动和招商任务管理
-- 商品导入、货品池和评级详情
-- 供给与供应商分析
-- Intelligence Agent 交互
-- 自动化规则和复盘报告
+服务端通过 `API_INTERNAL_URL` 读取 `/api/v1/health`。基础组件位于 `components/ui`：Button、Tag、FilterChip、DataTable、EmptyState、ErrorState、Drawer、Toast。
 
-候选技术栈为 Next.js、TypeScript、Tailwind CSS 和 ECharts，最终选择以架构文档为准。
-
+质量门禁：`npm run lint && npm run typecheck && npm test && npm run build`。

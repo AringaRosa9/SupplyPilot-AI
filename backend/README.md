@@ -1,15 +1,17 @@
 # Backend
 
-SupplyPilot AI 后端服务预留目录，当前不包含代码。
+FastAPI 模块化单体与 Celery worker。当前 M0 提供核心 SQLAlchemy 实体、Alembic 初始迁移、统一配置/日志/错误边界以及健康检查。
 
-计划承载：
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -e '.[dev]'
+uvicorn app.main:app --reload
+```
 
-- 活动、招商任务与商品 API
-- 货品池状态机
-- 数据校验与批处理任务
-- 产品评级引擎
-- 供给洞察与分析工具
-- Agent、自动化规则、通知和审计
-
-候选技术栈为 FastAPI 或 NestJS，最终选择以架构文档为准。
-
+- 存活检查：`GET /health`
+- 就绪检查：`GET /api/v1/health`
+- OpenAPI：`GET /api/docs`
+- worker：`celery -A app.tasks.celery_app:celery_app worker --loglevel=INFO`
+- 迁移：`alembic upgrade head`
+- 质量门禁：`ruff check . && ruff format --check . && mypy app && pytest`

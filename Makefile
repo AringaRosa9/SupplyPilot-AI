@@ -1,4 +1,4 @@
-.PHONY: dev check backend-check frontend-check
+.PHONY: dev check backend-check frontend-check demo-reset
 
 dev:
 	docker compose up --build
@@ -10,3 +10,6 @@ backend-check:
 
 frontend-check:
 	cd frontend && npm run lint && npm run typecheck && npm test && npm run build
+
+demo-reset:
+	docker compose exec api python -m app.cli.seed_demo --reset

@@ -4,7 +4,17 @@ from decimal import Decimal
 from enum import StrEnum
 from typing import Any
 
-from sqlalchemy import Boolean, DateTime, Enum, ForeignKey, Numeric, String, Text, UniqueConstraint
+from sqlalchemy import (
+    Boolean,
+    DateTime,
+    Enum,
+    ForeignKey,
+    Integer,
+    Numeric,
+    String,
+    Text,
+    UniqueConstraint,
+)
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.sql import func
@@ -85,6 +95,17 @@ class Product(TimestampMixin, Base):
     market: Mapped[str] = mapped_column(String(80), index=True)
     attributes: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict)
     data_version: Mapped[int] = mapped_column(default=1)
+
+
+class InventorySnapshot(Base):
+    __tablename__ = "inventory_snapshots"
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    product_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("products.id"), index=True)
+    snapshot_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+    inventory: Mapped[int] = mapped_column(Integer)
+    price: Mapped[Decimal] = mapped_column(Numeric(12, 2))
+    benchmark_price: Mapped[Decimal] = mapped_column(Numeric(12, 2))
+    conversion_rate: Mapped[Decimal] = mapped_column(Numeric(7, 4))
 
 
 class ProductPoolEntry(TimestampMixin, Base):

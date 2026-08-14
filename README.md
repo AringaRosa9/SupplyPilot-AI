@@ -6,7 +6,7 @@
 
 SupplyPilot AI 覆盖从营销活动发起、招商任务拆解、商品提交、自动校验、产品评级、货品池管理，到供给缺口识别、供应商风险预警和产线复盘的完整链路。项目希望展示如何将 AI Agent、可解释评分模型和事件驱动自动化真正嵌入供应链工作流，而不只是为数据增加一个聊天入口。
 
-> 当前阶段：M0 设计固化与工程骨架已完成，下一阶段为 M1 演示数据与产品壳层。
+> 当前阶段：M1 演示数据与产品壳层已完成，下一阶段为 M2 招商业务闭环。
 
 ## 核心场景
 
@@ -96,7 +96,7 @@ supplypilot-ai/
 - [演示脚本](docs/demo-script.md)
 - [贡献指南](CONTRIBUTING.md)
 
-M0 已固化系统架构、数据状态、评分模型和 Agent 边界；后续里程碑在这些契约上迭代。
+M1 已在工程骨架上补齐固定演示数据、轻量角色上下文和真实 API 驱动的供应链驾驶舱；后续里程碑将在这条可复现演示基线上迭代。
 
 ## 本地启动
 
@@ -107,8 +107,15 @@ cp .env.example .env
 docker compose up --build
 ```
 
+首次启动后可随时将数据库恢复到固定演示状态：
+
+```bash
+make demo-reset
+```
+
 - Web：<http://localhost:3000>
 - API 健康检查：<http://localhost:8000/api/v1/health>
+- 驾驶舱 API：<http://localhost:8000/api/v1/dashboard?role=marketing_ops>
 - OpenAPI：<http://localhost:8000/api/docs>
 
 执行本地质量门禁：`make check`。首次运行需要先按 `backend/README.md` 和 `frontend/README.md` 安装开发依赖。
@@ -119,7 +126,7 @@ docker compose up --build
 - [x] 完成初版 PRD
 - [x] 建立文档和工程目录骨架
 - [x] 完成信息架构、数据模型和系统架构设计
-- [ ] 准备可复现的模拟数据集
+- [x] 准备可复现的模拟数据集与驾驶舱产品壳层
 - [ ] 实现活动、招商任务与货品池基础链路
 - [ ] 实现 Hotel / Flight 评级引擎
 - [ ] 实现供给洞察、自动化规则与 Agent
@@ -127,4 +134,4 @@ docker compose up --build
 
 ## 项目状态
 
-SupplyPilot AI 已完成 M0。产品范围以 [PRD](docs/PRD.md) 为基线，技术与业务契约的变更应通过 ADR、迁移和对应测试同步记录。
+SupplyPilot AI 已完成 M1。固定演示数据、轻量角色上下文和真实 API 驱动的供应链驾驶舱已可用于后续纵向切片。产品范围以 [PRD](docs/PRD.md) 为基线，技术与业务契约的变更应通过 ADR、迁移和对应测试同步记录。

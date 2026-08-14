@@ -4,6 +4,7 @@ from app.models.domain import (  # noqa: F401
     AuditLog,
     Campaign,
     GradingResult,
+    InventorySnapshot,
     Product,
     ProductPoolEntry,
     SourcingTask,
